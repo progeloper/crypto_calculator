@@ -6,9 +6,10 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:coin_repository/coin_repository.dart' show CoinRepository;
 
 part 'exchange_state.dart';
+part 'exchange_cubit.g.dart';
 
 class ExchangeCubit extends Cubit<ExchangeState> {
-  ExchangeCubit(): super(ExchangeState());
+  ExchangeCubit(this._repository): super(ExchangeState());
 
   final CoinRepository _repository;
 
@@ -37,6 +38,11 @@ class ExchangeCubit extends Cubit<ExchangeState> {
   @override
   ExchangeState fromJson(Map<String, dynamic> json){
     return ExchangeState.fromJson(json);
+  }
+
+  @override
+  Map<String, dynamic> toJson(){
+    return state.toJson();
   }
 
 }
