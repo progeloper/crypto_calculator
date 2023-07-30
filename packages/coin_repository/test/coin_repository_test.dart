@@ -69,7 +69,7 @@ void main() {
                 const ExchangeModel(
                   base: base,
                   quote: quote,
-                  rate: 3260.3514321215056208129867667,
+                  rate: 29221.66889089644,
                 ),
               );
             },

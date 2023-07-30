@@ -41,7 +41,7 @@ class ExchangeCubit extends Cubit<ExchangeState> {
   }
 
   @override
-  Map<String, dynamic> toJson(){
+  Map<String, dynamic> toJson(ExchangeState state){
     return state.toJson();
   }
 
