@@ -197,7 +197,7 @@ class _ConvertViewState extends State<ConvertView>
                         } else if (state.status == ExchangeStatus.success) {
                           return _netValueCircle(
                             _netValueGradientString(
-                                (1/state.exchange.rate).floor().toString(),
+                                (1/state.exchange.rate).toStringAsFixed(3),
                                 'for 1 ${state.exchange.quote}'),
                             size,
                           );
