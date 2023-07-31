@@ -23,6 +23,8 @@ dependencies:
   hydrated_bloc: ^9.1.2
   path_provider: ^2.0.15
   google_fonts: ^5.1.0
+  intl: ^0.18.1
+  lottie: ^2.4.0
   coin_repository:
     path: packages/coin_repository
 
@@ -40,9 +42,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/gradient_loading.json
+    - assets/loading_plane.json
+    - assets/error_animation.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
