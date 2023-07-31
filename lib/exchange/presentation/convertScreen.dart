@@ -196,13 +196,9 @@ class _ConvertViewState extends State<ConvertView>
                           );
                         } else if (state.status == ExchangeStatus.success) {
                           return _netValueCircle(
-                            SizedBox(
-                              height: size.height * 0.3,
-                              width: size.width * 0.4,
-                              child: _netValueGradientString(
-                                  (1/state.exchange.rate).floor().toString(),
-                                  'for 1 ${state.exchange.quote}'),
-                            ),
+                            _netValueGradientString(
+                                (1/state.exchange.rate).floor().toString(),
+                                'for 1 ${state.exchange.quote}'),
                             size,
                           );
                         } else {
