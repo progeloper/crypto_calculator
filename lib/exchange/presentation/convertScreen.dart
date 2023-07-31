@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:coin_repository/coin_repository.dart';
 import 'package:crypto_calculator/constants/constants.dart';
 import 'package:crypto_calculator/exchange/cubit/exchange_cubit.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,8 +32,8 @@ class ConvertView extends StatefulWidget {
 class _ConvertViewState extends State<ConvertView>
     with SingleTickerProviderStateMixin {
   late AnimationController animationController;
-  String initialBase = currenciesList[20];
-  String initialQuote = cryptoList[0];
+  String currentBase = currenciesList[0];
+  String currentQuote = cryptoList[0];
 
   @override
   void initState() {
@@ -60,7 +61,33 @@ class _ConvertViewState extends State<ConvertView>
     );
   }
 
-  Widget selectionRow(String text, List<String> dropdownList) {
+  Widget getDropdown(
+      List<String> dropDownItems, bool isRef) {
+    List<DropdownMenuItem<String>> list = [];
+    for (int i = 0; i < dropDownItems.length; i++) {
+      var item = DropdownMenuItem(
+        child: Text(dropDownItems[i]),
+        value: dropDownItems[i],
+      );
+      list.add(item);
+    }
+    return DropdownButton<String>(
+      value: isRef?currentBase:currentQuote,
+      items: list,
+      onChanged: (value) {
+        setState(() {
+          if(isRef) {
+            currentBase = value!;
+          } else{
+            currentQuote = value!;
+          }
+        });
+      },
+    );
+  }
+
+  Widget _selectionRow(String text, List<String> dropdownList,
+      bool isRef) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       mainAxisSize: MainAxisSize.max,
@@ -69,29 +96,12 @@ class _ConvertViewState extends State<ConvertView>
           text,
           style: GoogleFonts.notoSansAdlamUnjoined(
             fontSize: 16,
-            color: Colors.white12,
+            color: Colors.black45,
           ),
         ),
-        DropdownButton<String>(
-          value: dropdownList[0],
-          items: dropdownList
-              .map(
-                (e) => DropdownMenuItem<String>(
-                  child: Text(
-                    e,
-                    style: GoogleFonts.notoSansAdlamUnjoined(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-
-            });
-          },
+        getDropdown(
+          dropdownList,
+          isRef,
         ),
       ],
     );
@@ -112,6 +122,7 @@ class _ConvertViewState extends State<ConvertView>
 
   Widget _netValueGradientString(String text, String currency) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         GradientText(
           text: text,
@@ -151,7 +162,7 @@ class _ConvertViewState extends State<ConvertView>
         body: SizedBox(
           width: double.infinity,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10),
+            padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.max,
@@ -167,34 +178,59 @@ class _ConvertViewState extends State<ConvertView>
                 const SizedBox(
                   height: 50,
                 ),
-                SizedBox(
-                  height: size.height * 0.5,
-                  width: size.width * 0.85,
-                  child: BlocBuilder<ExchangeCubit, ExchangeState>(
-                    builder: (context, state) {
-                      if (state.status == ExchangeStatus.loading) {
-                        return _netValueCircle(
-                          OnLoading(
-                              size: size,
-                              animationController: animationController),
-                          size,
-                        );
-                      } else if (state.status == ExchangeStatus.success) {
-                        return _netValueCircle(
-                          _netValueGradientString(
-                              state.exchange.rate.toString(),
-                              state.exchange.quote),
-                          size,
-                        );
-                      } else {
-                        return _netValueCircle(
-                          onFailure(
-                              size: size,
-                              animationController: animationController),
-                          size,
-                        );
-                      }
-                    },
+                GestureDetector(
+                  onTap: ()async{
+                    await context.read<ExchangeCubit>().fetchExchange(currentBase, currentQuote);
+                  },
+                  child: SizedBox(
+                    height: size.height * 0.5,
+                    width: size.width * 0.85,
+                    child: BlocBuilder<ExchangeCubit, ExchangeState>(
+                      builder: (context, state) {
+                        if (state.status == ExchangeStatus.loading) {
+                          return _netValueCircle(
+                            OnLoading(
+                                size: size,
+                                animationController: animationController),
+                            size,
+                          );
+                        } else if (state.status == ExchangeStatus.success) {
+                          return _netValueCircle(
+                            SizedBox(
+                              height: size.height * 0.3,
+                              width: size.width * 0.4,
+                              child: _netValueGradientString(
+                                  (1/state.exchange.rate).floor().toString(),
+                                  'for 1 ${state.exchange.quote}'),
+                            ),
+                            size,
+                          );
+                        } else {
+                          return _netValueCircle(
+                            onFailure(
+                                size: size,
+                                animationController: animationController),
+                            size,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _selectionRow(
+                    'Ref Currency',
+                    currenciesList,
+                    true,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _selectionRow(
+                    'Ref Coin',
+                    cryptoList,
+                    false,
                   ),
                 ),
               ],
@@ -218,7 +254,7 @@ class onFailure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: size.height * 0.3,
       width: size.width * 0.4,
       child: Lottie.asset(
@@ -247,9 +283,9 @@ class OnLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: size.height * 0.2,
-      width: size.width * 0.3,
+    return SizedBox(
+      height: size.height * 0.4,
+      width: size.width * 0.5,
       child: Lottie.asset(
         'assets/loading_plane.json',
         controller: animationController,
