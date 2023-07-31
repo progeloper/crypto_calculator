@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import 'package:coin_repository/coin_repository.dart';
+import 'package:crypto_calculator/constants/constants.dart';
 import 'package:crypto_calculator/exchange/cubit/exchange_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:bloc/bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +16,7 @@ class ConvertPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => ExchangeCubit(context.read<CoinRepository>()),
-      child: ConvertView(),
+      child: const ConvertView(),
     );
   }
 }
@@ -31,6 +31,8 @@ class ConvertView extends StatefulWidget {
 class _ConvertViewState extends State<ConvertView>
     with SingleTickerProviderStateMixin {
   late AnimationController animationController;
+  String initialBase = currenciesList[20];
+  String initialQuote = cryptoList[0];
 
   @override
   void initState() {
@@ -51,18 +53,59 @@ class _ConvertViewState extends State<ConvertView>
       style: GoogleFonts.hindMadurai(
         textStyle: const TextStyle(
           color: Colors.black87,
-          fontSize: 36,
-          fontWeight: FontWeight.w700,
+          fontSize: 32,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _netValueCircle(Widget child) {
-    return CustomPaint(
-      painter: ConcentricCircles(),
-      child: Center(
-        child: child,
+  Widget selectionRow(String text, List<String> dropdownList) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Text(
+          text,
+          style: GoogleFonts.notoSansAdlamUnjoined(
+            fontSize: 16,
+            color: Colors.white12,
+          ),
+        ),
+        DropdownButton<String>(
+          value: dropdownList[0],
+          items: dropdownList
+              .map(
+                (e) => DropdownMenuItem<String>(
+                  child: Text(
+                    e,
+                    style: GoogleFonts.notoSansAdlamUnjoined(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _netValueCircle(Widget child, Size size) {
+    return SizedBox(
+      height: size.height * 0.4,
+      width: size.width * 0.8,
+      child: CustomPaint(
+        painter: ConcentricCircles(),
+        child: Center(
+          child: child,
+        ),
       ),
     );
   }
@@ -95,7 +138,7 @@ class _ConvertViewState extends State<ConvertView>
       style: GoogleFonts.oxygen(
         fontSize: 16,
         fontWeight: FontWeight.w400,
-        color: Colors.black54,
+        color: Colors.black,
       ),
     );
   }
@@ -103,67 +146,119 @@ class _ConvertViewState extends State<ConvertView>
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
-    return Scaffold(
-      body: SizedBox(
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _currentDate(),
+    return SafeArea(
+      child: Scaffold(
+        body: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _currentDate(),
+                ),
+                const SizedBox(
+                  height: 40,
+                ),
+                _firstParagraph(),
+                const SizedBox(
+                  height: 50,
+                ),
+                SizedBox(
+                  height: size.height * 0.5,
+                  width: size.width * 0.85,
+                  child: BlocBuilder<ExchangeCubit, ExchangeState>(
+                    builder: (context, state) {
+                      if (state.status == ExchangeStatus.loading) {
+                        return _netValueCircle(
+                          OnLoading(
+                              size: size,
+                              animationController: animationController),
+                          size,
+                        );
+                      } else if (state.status == ExchangeStatus.success) {
+                        return _netValueCircle(
+                          _netValueGradientString(
+                              state.exchange.rate.toString(),
+                              state.exchange.quote),
+                          size,
+                        );
+                      } else {
+                        return _netValueCircle(
+                          onFailure(
+                              size: size,
+                              animationController: animationController),
+                          size,
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
-            SizedBox(
-              height: 80,
-            ),
-            _firstParagraph(),
-            BlocBuilder<ExchangeCubit, ExchangeState>(
-              builder: (context, state) {
-                if (state.status == ExchangeStatus.loading) {
-                  return _netValueCircle(
-                    Container(
-                      height: size.height * 0.2,
-                      width: size.width * 0.3,
-                      child: Lottie.asset(
-                        'assets/loading_plane.json',
-                        controller: animationController,
-                        onLoaded: (composition) {
-                          animationController
-                            ..duration = composition.duration
-                            ..forward()
-                            ..repeat();
-                        },
-                      ),
-                    ),
-                  );
-                } else if (state.status == ExchangeStatus.success) {
-                  return _netValueCircle(
-                    _netValueGradientString(
-                        state.exchange.rate.toString(), state.exchange.quote),
-                  );
-                } else{
-                  return _netValueCircle(
-                    Container(
-                      height: size.height * 0.2,
-                      width: size.width * 0.3,
-                      child: Lottie.asset(
-                        'assets/error_animation.json',
-                        controller: animationController,
-                        onLoaded: (composition) {
-                          animationController
-                            ..duration = composition.duration
-                            ..forward()
-                            ..repeat();
-                        },
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class onFailure extends StatelessWidget {
+  const onFailure({
+    super.key,
+    required this.size,
+    required this.animationController,
+  });
+
+  final Size size;
+  final AnimationController animationController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: size.height * 0.3,
+      width: size.width * 0.4,
+      child: Lottie.asset(
+        'assets/error_animation.json',
+        controller: animationController,
+        onLoaded: (composition) {
+          animationController
+            ..duration = composition.duration
+            ..forward()
+            ..repeat();
+        },
+      ),
+    );
+  }
+}
+
+class OnLoading extends StatelessWidget {
+  const OnLoading({
+    super.key,
+    required this.size,
+    required this.animationController,
+  });
+
+  final Size size;
+  final AnimationController animationController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: size.height * 0.2,
+      width: size.width * 0.3,
+      child: Lottie.asset(
+        'assets/loading_plane.json',
+        controller: animationController,
+        onLoaded: (composition) {
+          animationController
+            ..duration = composition.duration
+            ..forward()
+            ..repeat();
+        },
       ),
     );
   }
@@ -204,9 +299,9 @@ class ConcentricCircles extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, largeCirclePaint);
-    canvas.drawCircle(center, radius * 0.77, shadowCircle);
-    canvas.drawCircle(center, radius * 0.75, midCirclePaint);
-    canvas.drawCircle(center, radius * 0.77, shadowCircle);
+    canvas.drawCircle(center, radius * 0.82, shadowCircle);
+    canvas.drawCircle(center, radius * 0.8, midCirclePaint);
+    canvas.drawCircle(center, radius * 0.67, shadowCircle);
     canvas.drawCircle(center, radius * 0.65, smallCirclePaint);
   }
 
@@ -227,7 +322,7 @@ class GradientText extends StatelessWidget {
     return ShaderMask(
       blendMode: BlendMode.srcIn,
       shaderCallback: (bounds) {
-        return LinearGradient(
+        return const LinearGradient(
           colors: [
             Color(0xFF0D05F7),
             Color(0xFF05C3F7),
